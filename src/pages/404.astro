@@ -1,0 +1,29 @@
+---
+/**
+ * English 404 → /404.html (the file GitHub Pages serves for unknown URLs).
+ * GitHub Pages serves ONE 404 file for the whole site, so when the missing URL
+ * was under /ar/ the inline script below swaps in the pre-built Arabic 404
+ * (/ar/404/) without changing the address bar. Without JavaScript the English
+ * page is shown.
+ */
+import BaseLayout from '../layouts/BaseLayout.astro';
+import NotFound from '../components/NotFound.astro';
+import { useTranslations } from '../i18n/ui';
+import { BASE } from '../utils/url';
+const t = useTranslations('en');
+---
+
+<BaseLayout lang="en" title={t.notFound.title} description={t.notFound.body} noindex alternates={{}}>
+  <NotFound lang="en" />
+  <script is:inline define:vars={{ base: BASE }}>
+    (function () {
+      var p = location.pathname;
+      if (p === base + '/ar' || p.indexOf(base + '/ar/') === 0) {
+        fetch(base + '/ar/404/')
+          .then(function (r) { return r.ok ? r.text() : Promise.reject(); })
+          .then(function (html) { document.open(); document.write(html); document.close(); })
+          .catch(function () {});
+      }
+    })();
+  </script>
+</BaseLayout>

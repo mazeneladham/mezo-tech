@@ -1,0 +1,125 @@
+---
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import Breadcrumbs from '../../components/Breadcrumbs.astro';
+import SocialLinks from '../../components/SocialLinks.astro';
+import { getProjects } from '../../utils/content';
+import { langStaticPaths } from '../../utils/routes';
+import { useTranslations, type Lang } from '../../i18n/ui';
+import { resume, type ResumeEntry } from '../../data/resume';
+import { learningTopics } from '../../data/learning';
+import { site } from '../../data/site';
+import { optionalAsset } from '../../utils/assets';
+import { getSocialLinks } from '../../utils/social';
+
+export function getStaticPaths() {
+  return langStaticPaths();
+}
+const { lang } = Astro.props as { lang: Lang };
+const t = useTranslations(lang);
+
+const projects = await getProjects(lang);
+const cvUrl = optionalAsset(site.cv.file);
+const hasContact = getSocialLinks().length > 0;
+
+const entrySections: { id: string; title: string; entries: ResumeEntry[] }[] = [
+  { id: 'education', title: t.resume.education, entries: resume.education },
+  { id: 'experience', title: t.resume.experience, entries: resume.experience },
+  { id: 'certifications', title: t.resume.certifications, entries: resume.certifications },
+];
+---
+
+<BaseLayout lang={lang} title={t.resume.title} description={t.resume.description} pageKey="resume" route="/resume/">
+  <section class="page-hero">
+    <div class="container page-hero__inner">
+      <Breadcrumbs lang={lang} items={[{ label: t.nav.resume }]} />
+      <h1>{t.resume.title}</h1>
+      <p>{site.name} — {site.tagline[lang]}</p>
+      <div class="link-row">
+        {
+          cvUrl ? (
+            <a class="btn btn--primary" href={cvUrl} download>{t.resume.download}</a>
+          ) : (
+            <p class="notice">{t.resume.cvLater}</p>
+          )
+        }
+      </div>
+    </div>
+  </section>
+
+  <section class="section">
+    <div class="container resume-grid">
+      <section class="resume-section" aria-labelledby="r-summary">
+        <h2 id="r-summary">{t.resume.summary}</h2>
+        <p>{resume.summary[lang]}</p>
+      </section>
+
+      {
+        entrySections.map((s) => (
+          <section class="resume-section" aria-labelledby={`r-${s.id}`}>
+            <h2 id={`r-${s.id}`}>{s.title}</h2>
+            <div>
+              {s.entries.length > 0 ? (
+                s.entries.map((e) => (
+                  <div class="resume-entry">
+                    <h3>{e.title[lang]}</h3>
+                    {(e.place || e.period) && (
+                      <p class="muted">{[e.place?.[lang], e.period].filter(Boolean).join(' · ')}</p>
+                    )}
+                    {e.details && <p>{e.details[lang]}</p>}
+                  </div>
+                ))
+              ) : (
+                <p class="muted">{t.resume.toBeAdded}</p>
+              )}
+            </div>
+          </section>
+        ))
+      }
+
+      <section class="resume-section" aria-labelledby="r-skills">
+        <h2 id="r-skills">{t.resume.skills}</h2>
+        <div>
+          <ul class="tag-list">
+            {learningTopics.map((x) => <li class="tag">{x.title[lang]}</li>)}
+          </ul>
+          <p class="muted" style="margin-block-start: var(--space-3)">{t.resume.skillsNote}</p>
+        </div>
+      </section>
+
+      <section class="resume-section" aria-labelledby="r-projects">
+        <h2 id="r-projects">{t.resume.projects}</h2>
+        <div>
+          {
+            projects.length > 0 ? (
+              <ul class="plain-list">
+                {projects.map((p) => (
+                  <li>
+                    <a class="text-link" href={p.path}>{p.data.title}</a>
+                    {p.data.example && <span class="badge badge--example">{t.common.exampleBadge}</span>}
+                    <p class="muted">{p.data.description}</p>
+                  </li>
+                ))}
+              </ul>
+            ) : (
+              <p class="muted">{t.resume.toBeAdded}</p>
+            )
+          }
+        </div>
+      </section>
+
+      <section class="resume-section" aria-labelledby="r-languages">
+        <h2 id="r-languages">{t.resume.languages}</h2>
+        <ul class="plain-list">
+          {resume.languages.map((l) => <li>{l[lang]}</li>)}
+        </ul>
+      </section>
+
+      <section class="resume-section" aria-labelledby="r-contact">
+        <h2 id="r-contact">{t.resume.contact}</h2>
+        <div>
+          {hasContact ? <SocialLinks lang={lang} showEmailText /> : <p class="muted">{t.contact.none}</p>}
+        </div>
+      </section>
+    </div>
+  </section>
+</BaseLayout>

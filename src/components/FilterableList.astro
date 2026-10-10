@@ -1,0 +1,92 @@
+---
+/**
+ * Wraps a grid of cards (PostCard/ProjectCard with `filterable`) and adds
+ * keyword search, category chips and tag/technology chips.
+ * Only categories/tags that actually occur in the listed content are shown.
+ */
+import Icon from './Icon.astro';
+import { useTranslations, type Lang } from '../i18n/ui';
+import { withBase } from '../utils/url';
+
+interface Option {
+  id: string;
+  label: string;
+}
+interface Props {
+  lang: Lang;
+  categories: Option[];
+  tags: Option[];
+  /** Legend for the tag group: "Tag" for blog, "Technology" for projects. */
+  tagLegend: string;
+  pageSize?: number;
+}
+const { lang, categories, tags, tagLegend, pageSize = 9 } = Astro.props;
+const t = useTranslations(lang);
+---
+
+<div data-filter-root data-lang={lang} data-page-size={pageSize}>
+  <div class="filter-bar">
+    <div class="field">
+      <label class="visually-hidden" for="filter-q">{t.filters.searchLabel}</label>
+      <input id="filter-q" type="search" data-filter-input placeholder={t.filters.searchPlaceholder} autocomplete="off" enterkeyhint="search" />
+      <button type="button" class="field__clear" data-filter-input-clear data-visible="false" aria-label={t.search.clear}>
+        <Icon name="close" />
+      </button>
+    </div>
+
+    {
+      categories.length > 1 && (
+        <fieldset class="chip-group">
+          <legend>{t.filters.category}</legend>
+          <div class="chips">
+            {categories.map((c) => (
+              <button type="button" class="chip" data-filter-category={c.id} aria-pressed="false">
+                {c.label}
+              </button>
+            ))}
+          </div>
+        </fieldset>
+      )
+    }
+
+    {
+      tags.length > 0 && (
+        <fieldset class="chip-group">
+          <legend>{tagLegend}</legend>
+          <div class="chips">
+            {tags.map((tg) => (
+              <button type="button" class="chip" data-filter-tag={tg.id} aria-pressed="false">
+                {tg.label}
+              </button>
+            ))}
+          </div>
+        </fieldset>
+      )
+    }
+
+    <div class="filter-status">
+      <span role="status" aria-live="polite" data-filter-count></span>
+      <button type="button" class="link-button" data-filter-clear hidden>{t.filters.clear}</button>
+    </div>
+  </div>
+
+  <div class="grid" data-filter-list>
+    <slot />
+  </div>
+
+  <div class="empty-state" data-filter-empty hidden>
+    <img src={withBase('/images/brand/mezo-symbol.png')} alt="" width="140" height="74" />
+    <h3>{t.filters.emptyTitle}</h3>
+    <p>{t.filters.emptyBody}</p>
+    <button type="button" class="btn btn--secondary btn--sm" data-filter-reset>{t.filters.clear}</button>
+  </div>
+
+  <div class="more-row" data-filter-more hidden>
+    <button type="button" class="btn btn--secondary">{t.filters.showMore}</button>
+  </div>
+</div>
+
+<script>
+  import { initFilters } from '../scripts/filter-list';
+  initFilters();
+</script>

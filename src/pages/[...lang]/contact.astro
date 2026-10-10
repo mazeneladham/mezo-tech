@@ -1,0 +1,52 @@
+---
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import Breadcrumbs from '../../components/Breadcrumbs.astro';
+import SocialLinks from '../../components/SocialLinks.astro';
+import { langStaticPaths } from '../../utils/routes';
+import { useTranslations, type Lang } from '../../i18n/ui';
+import { getSocialLinks } from '../../utils/social';
+
+export function getStaticPaths() {
+  return langStaticPaths();
+}
+const { lang } = Astro.props as { lang: Lang };
+const t = useTranslations(lang);
+const links = getSocialLinks();
+const email = links.find((l) => l.key === 'email');
+---
+
+<BaseLayout lang={lang} title={t.contact.title} description={t.contact.description} pageKey="contact" route="/contact/">
+  <section class="page-hero">
+    <div class="container page-hero__inner">
+      <Breadcrumbs lang={lang} items={[{ label: t.nav.contact }]} />
+      <h1>{t.contact.title}</h1>
+      <p>{t.contact.intro}</p>
+    </div>
+  </section>
+
+  <section class="section">
+    <div class="container container--narrow contact-panel">
+      <ul class="bullet-list">
+        {t.contact.topics.map((topic) => <li>{topic}</li>)}
+      </ul>
+
+      {
+        links.length > 0 ? (
+          <div class="stack">
+            <h2 style="font-size: var(--text-lg)">{t.contact.channels}</h2>
+            {email && (
+              <div class="link-row">
+                <a class="btn btn--primary" href={email.href}>{t.contact.emailMe}: <span class="ltr">{email.text}</span></a>
+              </div>
+            )}
+            <SocialLinks lang={lang} only={['github', 'linkedin', 'instagram']} />
+          </div>
+        ) : (
+          <p class="notice">{t.contact.none}</p>
+        )
+      }
+
+      <p class="muted">{t.contact.noForm}</p>
+    </div>
+  </section>
+</BaseLayout>

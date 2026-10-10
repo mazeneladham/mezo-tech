@@ -1,0 +1,82 @@
+---
+import type { Project } from '../utils/content';
+import { useTranslations, type Lang } from '../i18n/ui';
+import { categoryLabel, tagId } from '../data/taxonomy';
+import { optionalAsset } from '../utils/assets';
+import { safeHttpUrl } from '../utils/format';
+import { isConfigured, withBase } from '../utils/url';
+import { normalizeText } from '../utils/normalize';
+
+interface Props {
+  project: Project;
+  lang: Lang;
+  filterable?: boolean;
+}
+const { project, lang, filterable = false } = Astro.props;
+const t = useTranslations(lang);
+const d = project.data;
+const cover = optionalAsset(d.cover);
+const category = categoryLabel(lang, d.category);
+const github = isConfigured(d.github) ? safeHttpUrl(d.github) : undefined;
+const demo = isConfigured(d.demo) ? safeHttpUrl(d.demo) : undefined;
+const status = d.status ? t.status[d.status] : undefined;
+
+const haystack = normalizeText([d.title, d.description, category, ...d.technologies].join(' '));
+const filterAttrs = filterable
+  ? {
+      'data-filter-item': '',
+      'data-category': d.category,
+      'data-tags': d.technologies.map(tagId).join(' '),
+      'data-search': haystack,
+    }
+  : {};
+---
+
+<article class="card" {...filterAttrs}>
+  {
+    cover ? (
+      <div class="card__media">
+        <img src={cover} alt={d.coverAlt ?? ''} width="640" height="360" loading="lazy" decoding="async" />
+      </div>
+    ) : (
+      <div class="card__media card__media--placeholder">
+        <img src={withBase('/images/brand/mezo-symbol.png')} alt="" width="140" height="74" loading="lazy" decoding="async" />
+      </div>
+    )
+  }
+  <div class="card__body">
+    <div class="badge-row">
+      <span class="badge">{category}</span>
+      {status && <span class="badge">{t.common.status}: {status}</span>}
+      {d.example && <span class="badge badge--example">{t.common.exampleBadge}</span>}
+    </div>
+    <h3 class="card__title"><a href={project.path}>{d.title}</a></h3>
+    <p class="card__desc">{d.description}</p>
+    {
+      d.technologies.length > 0 && (
+        <ul class="tag-list" aria-label={t.common.technologies}>
+          {d.technologies.map((tech) => (
+            <li class="tag ltr">{tech}</li>
+          ))}
+        </ul>
+      )
+    }
+    <div class="card__footer">
+      <a href={project.path}>{t.common.viewProject}</a>
+      {
+        github && (
+          <a href={github} target="_blank" rel="noopener noreferrer">
+            {t.common.github}<span class="visually-hidden"> {t.a11y.newTab}</span>
+          </a>
+        )
+      }
+      {
+        demo && (
+          <a href={demo} target="_blank" rel="noopener noreferrer">
+            {t.common.liveDemo}<span class="visually-hidden"> {t.a11y.newTab}</span>
+          </a>
+        )
+      }
+    </div>
+  </div>
+</article>

@@ -1,0 +1,16 @@
+---
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import NotFound from '../../components/NotFound.astro';
+import { useTranslations, type Lang } from '../../i18n/ui';
+
+// Only the Arabic copy is needed here (English is src/pages/404.astro → /404.html).
+export function getStaticPaths() {
+  return [{ params: { lang: 'ar' }, props: { lang: 'ar' as Lang } }];
+}
+const { lang } = Astro.props as { lang: Lang };
+const t = useTranslations(lang);
+---
+
+<BaseLayout lang={lang} title={t.notFound.title} description={t.notFound.body} noindex alternates={{}}>
+  <NotFound lang={lang} />
+</BaseLayout>

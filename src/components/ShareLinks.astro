@@ -1,0 +1,57 @@
+---
+import Icon from './Icon.astro';
+import { useTranslations, type Lang } from '../i18n/ui';
+interface Props {
+  lang: Lang;
+  /** Absolute canonical URL of the page being shared. */
+  url: string;
+  title: string;
+}
+const { lang, url, title } = Astro.props;
+const t = useTranslations(lang);
+const u = encodeURIComponent(url);
+const text = encodeURIComponent(title);
+const targets = [
+  { label: t.common.shareOnX, icon: 'x' as const, href: `https://twitter.com/intent/tweet?url=${u}&text=${text}` },
+  { label: t.common.shareOnLinkedIn, icon: 'linkedin' as const, href: `https://www.linkedin.com/sharing/share-offsite/?url=${u}` },
+  { label: t.common.shareOnWhatsApp, icon: 'whatsapp' as const, href: `https://wa.me/?text=${text}%20${u}` },
+];
+---
+
+<div class="share" data-share-url={url}>
+  <span class="share__label" id="share-label">{t.common.share}</span>
+  <ul class="social-list" aria-labelledby="share-label">
+    {
+      targets.map((s) => (
+        <li>
+          <a href={s.href} target="_blank" rel="noopener noreferrer" aria-label={`${s.label} ${t.a11y.newTab}`} title={s.label}>
+            <Icon name={s.icon} size={18} />
+          </a>
+        </li>
+      ))
+    }
+    <li>
+      <button
+        type="button"
+        class="icon-btn"
+        data-copy-link
+        data-label={t.common.copyLink}
+        data-done={t.common.linkCopied}
+        aria-label={t.common.copyLink}
+        title={t.common.copyLink}
+        style="inline-size:44px;block-size:44px"
+      >
+        <Icon name="link" size={18} />
+      </button>
+    </li>
+  </ul>
+  <span class="visually-hidden" role="status" aria-live="polite" data-copy-status></span>
+</div>
+
+<style>
+  .share .social-list a {
+    inline-size: 44px;
+    padding-inline: 0;
+    justify-content: center;
+  }
+</style>

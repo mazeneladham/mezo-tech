@@ -1,0 +1,57 @@
+---
+import Icon from './Icon.astro';
+import { useTranslations, type Lang } from '../i18n/ui';
+interface Props {
+  lang: Lang;
+}
+const t = useTranslations(Astro.props.lang);
+---
+
+<button
+  type="button"
+  class="icon-btn theme-toggle"
+  data-theme-toggle
+  data-label-to-light={t.a11y.switchToLight}
+  data-label-to-dark={t.a11y.switchToDark}
+  aria-label={t.a11y.switchToDark}
+  title={t.a11y.switchToDark}
+>
+  <Icon name="moon" class="icon-moon" />
+  <Icon name="sun" class="icon-sun" />
+</button>
+
+<script>
+  const root = document.documentElement;
+
+  function currentTheme(): 'light' | 'dark' {
+    return root.getAttribute('data-theme') === 'dark' ? 'dark' : 'light';
+  }
+
+  function syncButtons() {
+    const theme = currentTheme();
+    document.querySelectorAll<HTMLButtonElement>('[data-theme-toggle]').forEach((btn) => {
+      const label = theme === 'dark' ? btn.dataset.labelToLight : btn.dataset.labelToDark;
+      if (label) {
+        btn.setAttribute('aria-label', label);
+        btn.title = label;
+      }
+    });
+  }
+
+  document.querySelectorAll<HTMLButtonElement>('[data-theme-toggle]').forEach((btn) => {
+    btn.addEventListener('click', () => {
+      const next = currentTheme() === 'dark' ? 'light' : 'dark';
+      root.classList.add('theme-transition');
+      root.setAttribute('data-theme', next);
+      try {
+        localStorage.setItem('theme', next);
+      } catch {
+        /* storage unavailable: theme still applies for this page view */
+      }
+      syncButtons();
+      window.setTimeout(() => root.classList.remove('theme-transition'), 250);
+    });
+  });
+
+  syncButtons();
+</script>

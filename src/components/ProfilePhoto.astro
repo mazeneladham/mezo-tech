@@ -1,0 +1,48 @@
+---
+/**
+ * Profile photograph. Shows public/images/profile/mezo-profile.webp when it
+ * exists (path configurable in src/data/site.ts); otherwise a neutral
+ * placeholder with the MEZO TECH symbol. A placeholder is never presented as
+ * the owner's appearance.
+ */
+import { site } from '../data/site';
+import { optionalAsset } from '../utils/assets';
+import { withBase } from '../utils/url';
+import { useTranslations, type Lang } from '../i18n/ui';
+interface Props {
+  lang: Lang;
+  small?: boolean;
+  /** Hero photo: load immediately. */
+  priority?: boolean;
+}
+const { lang, small = false, priority = false } = Astro.props;
+const t = useTranslations(lang);
+const photo = optionalAsset(site.profile.photo);
+---
+
+{
+  photo ? (
+    <div class:list={['photo-frame', { 'photo-frame--small': small }]}>
+      <img
+        src={photo}
+        width={site.profile.width}
+        height={site.profile.height}
+        alt={site.profile.alt[lang]}
+        loading={priority ? 'eager' : 'lazy'}
+        fetchpriority={priority ? 'high' : 'auto'}
+        decoding="async"
+      />
+    </div>
+  ) : (
+    <div class:list={['photo-frame', 'photo-frame--placeholder', { 'photo-frame--small': small }]}>
+      <img
+        src={withBase('/images/brand/mezo-symbol.png')}
+        width="140"
+        height="74"
+        alt={t.home.photoPlaceholderAlt}
+        loading={priority ? 'eager' : 'lazy'}
+        decoding="async"
+      />
+    </div>
+  )
+}

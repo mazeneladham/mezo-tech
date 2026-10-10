@@ -1,0 +1,53 @@
+---
+import BaseLayout from '../../../layouts/BaseLayout.astro';
+import Breadcrumbs from '../../../components/Breadcrumbs.astro';
+import FilterableList from '../../../components/FilterableList.astro';
+import PostCard from '../../../components/PostCard.astro';
+import { getPosts } from '../../../utils/content';
+import { langStaticPaths } from '../../../utils/routes';
+import { useTranslations, type Lang } from '../../../i18n/ui';
+import { categoryLabel, tagId, tagLabel } from '../../../data/taxonomy';
+
+export function getStaticPaths() {
+  return langStaticPaths();
+}
+const { lang } = Astro.props as { lang: Lang };
+const t = useTranslations(lang);
+
+const posts = await getPosts(lang);
+
+// Only categories/tags that are really used by published posts
+const categories = [...new Set(posts.map((p) => p.data.category))].map((id) => ({
+  id,
+  label: categoryLabel(lang, id),
+}));
+const tagMap = new Map<string, string>();
+posts.forEach((p) => p.data.tags.forEach((tag) => tagMap.set(tagId(tag), tagLabel(lang, tag))));
+const tags = [...tagMap.entries()]
+  .map(([id, label]) => ({ id, label }))
+  .sort((a, b) => a.label.localeCompare(b.label, lang));
+---
+
+<BaseLayout lang={lang} title={t.blog.title} description={t.blog.description} pageKey="blog" route="/blog/">
+  <section class="page-hero">
+    <div class="container page-hero__inner">
+      <Breadcrumbs lang={lang} items={[{ label: t.nav.blog }]} />
+      <h1>{t.blog.title}</h1>
+      <p>{t.blog.intro}</p>
+    </div>
+  </section>
+
+  <section class="section">
+    <div class="container">
+      {
+        posts.length > 0 ? (
+          <FilterableList lang={lang} categories={categories} tags={tags} tagLegend={t.filters.tag}>
+            {posts.map((post) => <PostCard post={post} lang={lang} filterable />)}
+          </FilterableList>
+        ) : (
+          <p class="notice">{t.blog.none}</p>
+        )
+      }
+    </div>
+  </section>
+</BaseLayout>

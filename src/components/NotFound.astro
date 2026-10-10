@@ -1,0 +1,21 @@
+---
+import { useTranslations, type Lang } from '../i18n/ui';
+import { localePath, withBase } from '../utils/url';
+interface Props { lang: Lang }
+const { lang } = Astro.props;
+const t = useTranslations(lang);
+---
+
+<section class="container">
+  <div class="notfound">
+    <img src={withBase('/images/brand/mezo-symbol.png')} alt="" width="104" height="56" />
+    <p class="notfound__code">404</p>
+    <h1>{t.notFound.title}</h1>
+    <p>{t.notFound.body}</p>
+    <div class="link-row">
+      <a class="btn btn--primary" href={localePath(lang, '/')}>{t.notFound.home}</a>
+      <a class="btn btn--secondary" href={localePath(lang, '/blog/')}>{t.notFound.blog}</a>
+      <a class="btn btn--secondary" href={localePath(lang, '/projects/')}>{t.notFound.projects}</a>
+    </div>
+  </div>
+</section>

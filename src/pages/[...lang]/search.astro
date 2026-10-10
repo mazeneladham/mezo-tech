@@ -1,0 +1,55 @@
+---
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import Breadcrumbs from '../../components/Breadcrumbs.astro';
+import Icon from '../../components/Icon.astro';
+import { langStaticPaths } from '../../utils/routes';
+import { useTranslations, type Lang } from '../../i18n/ui';
+import { localePath } from '../../utils/url';
+
+export function getStaticPaths() {
+  return langStaticPaths();
+}
+const { lang } = Astro.props as { lang: Lang };
+const t = useTranslations(lang);
+const indexUrl = localePath(lang, '/search-index.json');
+// Localised result-count strings for 0..99 (Arabic plural rules live in the dictionary)
+const counts = JSON.stringify(Array.from({ length: 100 }, (_, n) => t.filters.results(n)));
+const labels = JSON.stringify({ article: t.search.article, project: t.search.project, prompt: t.search.prompt, loadError: t.search.loadError });
+---
+
+<BaseLayout lang={lang} title={t.search.title} description={t.search.description} pageKey="search" route="/search/" noindex>
+  <section class="page-hero">
+    <div class="container page-hero__inner">
+      <Breadcrumbs lang={lang} items={[{ label: t.search.title }]} />
+      <h1>{t.search.title}</h1>
+      <p>{t.search.scope}</p>
+    </div>
+  </section>
+
+  <section class="section">
+    <div class="container container--narrow stack" data-search-root data-index={indexUrl} data-lang={lang} data-counts={counts} data-labels={labels}>
+      <form role="search" class="field" style="max-inline-size: none" onsubmit="return false">
+        <label class="visually-hidden" for="site-q">{t.search.label}</label>
+        <input id="site-q" type="search" name="q" data-search-input placeholder={t.search.placeholder} autocomplete="off" enterkeyhint="search" />
+        <button type="button" class="field__clear" data-search-clear data-visible="false" aria-label={t.search.clear}>
+          <Icon name="close" />
+        </button>
+      </form>
+
+      <p role="status" aria-live="polite" class="filter-status" data-search-status>{t.search.prompt}</p>
+      <ol class="result-list" data-search-results></ol>
+
+      <div class="empty-state" data-search-empty hidden>
+        <h2>{t.filters.emptyTitle}</h2>
+        <p>{t.filters.emptyBody}</p>
+      </div>
+
+      <noscript><p class="notice">{t.search.noJs}</p></noscript>
+    </div>
+  </section>
+
+  <script>
+    import { initSearch } from '../../scripts/search';
+    initSearch();
+  </script>
+</BaseLayout>

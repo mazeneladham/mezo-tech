@@ -1,0 +1,31 @@
+---
+/**
+ * Brand lockup: the supplied M/Z monogram (transparent PNG cut from the
+ * original logo) next to the MEZO TECH wordmark set as live text.
+ * The original, unmodified logo is kept in /brand-source/logo-original.png.
+ */
+import { withBase } from '../utils/url';
+interface Props {
+  /** Show only the symbol. */
+  symbolOnly?: boolean;
+}
+const { symbolOnly = false } = Astro.props;
+---
+
+<span class="brand__inner" style="display:inline-flex;align-items:center;gap:0.75rem">
+  <img
+    class="brand__mark"
+    src={withBase('/images/brand/mezo-symbol.png')}
+    width="140"
+    height="74"
+    alt=""
+    decoding="async"
+  />
+  {
+    !symbolOnly && (
+      <span class="brand__name ltr" translate="no">
+        MEZO <span>TECH</span>
+      </span>
+    )
+  }
+</span>

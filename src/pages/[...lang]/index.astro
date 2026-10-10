@@ -1,0 +1,171 @@
+---
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import ProfilePhoto from '../../components/ProfilePhoto.astro';
+import SectionHeader from '../../components/SectionHeader.astro';
+import ProjectCard from '../../components/ProjectCard.astro';
+import PostCard from '../../components/PostCard.astro';
+import SocialLinks from '../../components/SocialLinks.astro';
+import { getPosts, getProjects } from '../../utils/content';
+import { langStaticPaths } from '../../utils/routes';
+import { useTranslations, type Lang } from '../../i18n/ui';
+import { learningTopics } from '../../data/learning';
+import { site } from '../../data/site';
+import { absoluteUrl, localePath } from '../../utils/url';
+
+export function getStaticPaths() {
+  return langStaticPaths();
+}
+const { lang } = Astro.props as { lang: Lang };
+const t = useTranslations(lang);
+
+const featuredProjects = (await getProjects(lang)).filter((p) => p.data.featured).slice(0, 3);
+const latestPosts = (await getPosts(lang)).slice(0, 3);
+const topics = learningTopics.filter((x) => x.home);
+
+const jsonLd = [
+  {
+    '@context': 'https://schema.org',
+    '@type': 'WebSite',
+    name: site.name,
+    url: absoluteUrl(localePath(lang, '/')),
+    description: site.description[lang],
+    inLanguage: lang,
+  },
+];
+---
+
+<BaseLayout
+  lang={lang}
+  title={`${site.name} — ${site.tagline[lang]}`}
+  fullTitle
+  description={site.description[lang]}
+  pageKey="home"
+  route="/"
+  jsonLd={jsonLd}
+>
+  <!-- HERO -->
+  <section class="hero" aria-labelledby="hero-title">
+    <div class="container hero__grid">
+      <div class="hero__copy">
+        <p class="eyebrow">{t.home.eyebrow}</p>
+        <h1 class="hero__title" id="hero-title">
+          {t.home.heroTitle.before}<span class="hero__highlight">{t.home.heroTitle.highlight}</span>{t.home.heroTitle.after}
+        </h1>
+        <div>
+          <p class="hero__lead">{t.home.heroLead1}</p>
+          <p class="hero__lead">{t.home.heroLead2}</p>
+        </div>
+        <div class="hero__actions">
+          <a class="btn btn--primary" href={localePath(lang, '/projects/')}>{t.home.ctaWork}</a>
+          <a class="btn btn--secondary" href={localePath(lang, '/blog/')}>{t.home.ctaBlog}</a>
+          <a class="text-link" href={localePath(lang, '/about/')}>{t.home.ctaAbout}</a>
+        </div>
+      </div>
+      <ProfilePhoto lang={lang} priority />
+    </div>
+  </section>
+
+  <!-- INTRODUCTION -->
+  <section class="section" aria-labelledby="intro-title">
+    <div class="container split">
+      <h2 id="intro-title">{t.home.introTitle}</h2>
+      <p>{t.home.introBody}</p>
+    </div>
+  </section>
+
+  <!-- CURRENTLY LEARNING -->
+  <section class="section" aria-labelledby="learning-title">
+    <div class="container">
+      <SectionHeader
+        id="learning-title"
+        title={t.home.learningTitle}
+        intro={t.home.learningIntro}
+        linkHref={localePath(lang, '/learning/')}
+        linkLabel={t.learning.title}
+      />
+      <div class="grid grid--tight">
+        {
+          topics.map((topic) => (
+            <article class="card card--topic">
+              <div class="card__body">
+                <span class="badge">{t.learningStatus[topic.status]}</span>
+                <h3 class="card__title">{topic.title[lang]}</h3>
+                <p class="card__desc">{topic.description[lang]}</p>
+              </div>
+            </article>
+          ))
+        }
+      </div>
+    </div>
+  </section>
+
+  <!-- FEATURED PROJECTS -->
+  <section class="section" aria-labelledby="featured-title">
+    <div class="container">
+      <SectionHeader
+        id="featured-title"
+        title={t.home.featuredTitle}
+        intro={t.home.featuredIntro}
+        linkHref={localePath(lang, '/projects/')}
+        linkLabel={t.common.viewAllProjects}
+      />
+      {
+        featuredProjects.length > 0 ? (
+          <div class="grid">
+            {featuredProjects.map((p) => <ProjectCard project={p} lang={lang} />)}
+          </div>
+        ) : (
+          <p class="notice">{t.home.noProjects}</p>
+        )
+      }
+    </div>
+  </section>
+
+  <!-- LATEST ARTICLES -->
+  <section class="section" aria-labelledby="latest-title">
+    <div class="container">
+      <SectionHeader
+        id="latest-title"
+        title={t.home.latestTitle}
+        intro={t.home.latestIntro}
+        linkHref={localePath(lang, '/blog/')}
+        linkLabel={t.common.exploreBlog}
+      />
+      {
+        latestPosts.length > 0 ? (
+          <div class="grid">
+            {latestPosts.map((p) => <PostCard post={p} lang={lang} />)}
+          </div>
+        ) : (
+          <p class="notice">{t.home.noPosts}</p>
+        )
+      }
+    </div>
+  </section>
+
+  <!-- LEARNING PHILOSOPHY -->
+  <section class="section band" aria-labelledby="philosophy-title">
+    <div class="container">
+      <div class="pullquote">
+        <h2 id="philosophy-title">{t.home.philosophyTitle}</h2>
+        <p>{t.home.philosophyBody}</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- CALL TO ACTION -->
+  <section class="section" aria-labelledby="cta-title">
+    <div class="container">
+      <div class="cta">
+        <h2 id="cta-title">{t.home.ctaTitle}</h2>
+        <p>{t.home.ctaBody}</p>
+        <div class="cta__actions">
+          <a class="btn btn--primary" href={localePath(lang, '/projects/')}>{t.nav.projects}</a>
+          <a class="btn btn--secondary" href={localePath(lang, '/blog/')}>{t.nav.blog}</a>
+          <a class="btn btn--secondary" href={localePath(lang, '/contact/')}>{t.home.ctaContact}</a>
+        </div>
+        <SocialLinks lang={lang} only={['github', 'linkedin']} />
+      </div>
+    </div>
+  </section>
+</BaseLayout>

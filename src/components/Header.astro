@@ -1,0 +1,118 @@
+---
+import Logo from './Logo.astro';
+import Icon from './Icon.astro';
+import ThemeToggle from './ThemeToggle.astro';
+import LangSwitcher from './LangSwitcher.astro';
+import { useTranslations, type Lang } from '../i18n/ui';
+import { localePath } from '../utils/url';
+
+interface Props {
+  lang: Lang;
+  /** Key of the current top-level section: 'home' | 'about' | 'projects' | 'blog' | 'learning' | 'resume' | 'contact' | 'search' */
+  current?: string;
+  targets: Record<Lang, { href: string; exact: boolean }>;
+}
+const { lang, current, targets } = Astro.props;
+const t = useTranslations(lang);
+
+const items = [
+  { key: 'about', label: t.nav.about, href: localePath(lang, '/about/') },
+  { key: 'projects', label: t.nav.projects, href: localePath(lang, '/projects/') },
+  { key: 'blog', label: t.nav.blog, href: localePath(lang, '/blog/') },
+  { key: 'learning', label: t.nav.learning, href: localePath(lang, '/learning/') },
+  { key: 'resume', label: t.nav.resume, href: localePath(lang, '/resume/') },
+  { key: 'contact', label: t.nav.contact, href: localePath(lang, '/contact/') },
+];
+---
+
+<header class="site-header">
+  <div class="container site-header__inner">
+    <a class="brand" href={localePath(lang, '/')} aria-label={t.a11y.logoHome}>
+      <Logo />
+    </a>
+
+    <nav class="site-nav" id="site-nav" aria-label={t.a11y.primaryNav} data-site-nav>
+      <ul>
+        {
+          items.map((item) => (
+            <li>
+              <a href={item.href} aria-current={current === item.key ? 'page' : undefined}>
+                {item.label}
+              </a>
+            </li>
+          ))
+        }
+      </ul>
+    </nav>
+
+    <div class="header-tools">
+      <a class="icon-btn" href={localePath(lang, '/search/')} aria-label={t.nav.search} title={t.nav.search} aria-current={current === 'search' ? 'page' : undefined}>
+        <Icon name="search" />
+      </a>
+      <LangSwitcher lang={lang} targets={targets} />
+      <ThemeToggle lang={lang} />
+      <button
+        type="button"
+        class="icon-btn menu-toggle"
+        data-menu-toggle
+        aria-expanded="false"
+        aria-controls="site-nav"
+        aria-label={t.a11y.openMenu}
+        data-label-open={t.a11y.openMenu}
+        data-label-close={t.a11y.closeMenu}
+      >
+        <Icon name="menu" class="icon-open" />
+        <Icon name="close" class="icon-close" />
+      </button>
+    </div>
+  </div>
+</header>
+
+<style>
+  .menu-toggle :global(.icon-close) {
+    display: none;
+  }
+  .menu-toggle[aria-expanded='true'] :global(.icon-open) {
+    display: none;
+  }
+  .menu-toggle[aria-expanded='true'] :global(.icon-close) {
+    display: block;
+  }
+</style>
+
+<script>
+  const toggle = document.querySelector<HTMLButtonElement>('[data-menu-toggle]');
+  const nav = document.querySelector<HTMLElement>('[data-site-nav]');
+
+  if (toggle && nav) {
+    const mq = window.matchMedia('(min-width: 62rem)');
+
+    const setOpen = (open: boolean, returnFocus = false) => {
+      nav.classList.toggle('is-open', open);
+      toggle.setAttribute('aria-expanded', String(open));
+      const label = open ? toggle.dataset.labelClose : toggle.dataset.labelOpen;
+      if (label) toggle.setAttribute('aria-label', label);
+      if (!open && returnFocus) toggle.focus();
+    };
+
+    toggle.addEventListener('click', () => setOpen(toggle.getAttribute('aria-expanded') !== 'true'));
+
+    // Escape closes and returns focus to the button
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape' && toggle.getAttribute('aria-expanded') === 'true') {
+        setOpen(false, true);
+      }
+    });
+
+    // Tapping/clicking outside or on a link closes the menu
+    document.addEventListener('click', (e) => {
+      if (toggle.getAttribute('aria-expanded') !== 'true') return;
+      const target = e.target as Node;
+      if (!nav.contains(target) && !toggle.contains(target)) setOpen(false);
+    });
+    nav.querySelectorAll('a').forEach((a) => a.addEventListener('click', () => setOpen(false)));
+
+    // Leaving the mobile layout resets the state
+    mq.addEventListener('change', () => setOpen(false));
+  }
+</script>

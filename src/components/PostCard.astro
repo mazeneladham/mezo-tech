@@ -1,0 +1,64 @@
+---
+import type { Post } from '../utils/content';
+import { useTranslations, languages, type Lang } from '../i18n/ui';
+import { categoryLabel, tagId, tagLabel } from '../data/taxonomy';
+import { formatDate, isoDate } from '../utils/format';
+import { optionalAsset } from '../utils/assets';
+import { normalizeText } from '../utils/normalize';
+
+interface Props {
+  post: Post;
+  lang: Lang;
+  /** Add data attributes used by the client-side filter. */
+  filterable?: boolean;
+}
+const { post, lang, filterable = false } = Astro.props;
+const t = useTranslations(lang);
+const d = post.data;
+const cover = optionalAsset(d.cover);
+const category = categoryLabel(lang, d.category);
+
+const haystack = normalizeText(
+  [d.title, d.description, category, ...d.tags, ...d.tags.map((x) => tagLabel(lang, x))].join(' '),
+);
+const filterAttrs = filterable
+  ? {
+      'data-filter-item': '',
+      'data-category': d.category,
+      'data-tags': d.tags.map(tagId).join(' '),
+      'data-search': haystack,
+    }
+  : {};
+---
+
+<article class="card" {...filterAttrs}>
+  {
+    cover && (
+      <div class="card__media">
+        <img src={cover} alt={d.coverAlt ?? ''} width="640" height="360" loading="lazy" decoding="async" />
+      </div>
+    )
+  }
+  <div class="card__body">
+    <ul class="meta">
+      <li><time datetime={isoDate(d.pubDate)}>{formatDate(d.pubDate, lang)}</time></li>
+      <li>{t.common.minRead(post.readingTime)}</li>
+      <li lang={post.lang}>{languages[post.lang].label}</li>
+    </ul>
+    <h3 class="card__title"><a href={post.path}>{d.title}</a></h3>
+    <p class="card__desc">{d.description}</p>
+    <div class="badge-row">
+      <span class="badge">{category}</span>
+      {d.example && <span class="badge badge--example">{t.common.exampleBadge}</span>}
+    </div>
+    {
+      d.tags.length > 0 && (
+        <ul class="tag-list" aria-label={t.common.tags}>
+          {d.tags.map((tag) => (
+            <li class="tag">{tagLabel(lang, tag)}</li>
+          ))}
+        </ul>
+      )
+    }
+  </div>
+</article>

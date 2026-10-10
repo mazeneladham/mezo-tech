@@ -1,0 +1,155 @@
+---
+import { render } from 'astro:content';
+import BaseLayout from '../../../layouts/BaseLayout.astro';
+import Breadcrumbs from '../../../components/Breadcrumbs.astro';
+import PostCard from '../../../components/PostCard.astro';
+import ProjectCard from '../../../components/ProjectCard.astro';
+import ArticleEnhancements from '../../../components/ArticleEnhancements.astro';
+import Icon from '../../../components/Icon.astro';
+import { alternatesFor, getAllPosts, getAllProjects, pickByKeys, type Project } from '../../../utils/content';
+import { optionalAsset } from '../../../utils/assets';
+import { formatMonthYear, safeHttpUrl } from '../../../utils/format';
+import { absoluteUrl, isConfigured, localePath } from '../../../utils/url';
+import { useTranslations, type Lang } from '../../../i18n/ui';
+import { categoryLabel } from '../../../data/taxonomy';
+import { site } from '../../../data/site';
+
+export async function getStaticPaths() {
+  const projects = await getAllProjects();
+  return projects.map((project) => ({
+    params: { lang: project.lang === 'en' ? undefined : project.lang, slug: project.slug },
+    props: { project },
+  }));
+}
+
+const { project } = Astro.props as { project: Project };
+const lang: Lang = project.lang;
+const t = useTranslations(lang);
+const d = project.data;
+
+const { Content } = await render(project.entry);
+
+const allProjects = await getAllProjects();
+const alternates = alternatesFor(allProjects, project.key);
+const relatedPostItems = pickByKeys(await getAllPosts(), lang, d.relatedPosts);
+const relatedProjectItems = pickByKeys(allProjects, lang, d.relatedProjects).filter((p) => p.key !== project.key);
+
+const coverUrl = optionalAsset(d.cover);
+const category = categoryLabel(lang, d.category);
+const github = isConfigured(d.github) ? safeHttpUrl(d.github) : undefined;
+const demo = isConfigured(d.demo) ? safeHttpUrl(d.demo) : undefined;
+const status = d.status ? t.status[d.status] : undefined;
+
+let period: string | undefined;
+if (d.startDate && d.endDate) period = `${formatMonthYear(d.startDate, lang)} – ${formatMonthYear(d.endDate, lang)}`;
+else if (d.startDate) period = `${formatMonthYear(d.startDate, lang)} – ${d.status === 'completed' ? '' : t.common.present}`.trim();
+else if (d.endDate) period = formatMonthYear(d.endDate, lang);
+
+const canonical = absoluteUrl(project.path);
+const jsonLd = [
+  {
+    '@context': 'https://schema.org',
+    '@type': 'CreativeWork',
+    name: d.title,
+    description: d.description,
+    url: canonical,
+    inLanguage: lang,
+    keywords: d.technologies.join(', '),
+    ...(github ? { codeRepository: github } : {}),
+    ...(coverUrl ? { image: absoluteUrl(coverUrl) } : {}),
+    creator: { '@type': 'Organization', name: site.authorName },
+  },
+];
+---
+
+<BaseLayout
+  lang={lang}
+  title={d.title}
+  description={d.description}
+  pageKey="projects"
+  alternates={alternates}
+  section="projects"
+  image={d.cover}
+  imageAlt={d.coverAlt}
+  jsonLd={jsonLd}
+>
+  <ArticleEnhancements lang={lang} />
+
+  <div class="container">
+    <header class="article-header">
+      <Breadcrumbs lang={lang} items={[{ label: t.nav.projects, href: localePath(lang, '/projects/') }, { label: d.title }]} />
+      <div class="badge-row">
+        <span class="badge">{category}</span>
+        {status && <span class="badge">{t.common.status}: {status}</span>}
+        {d.example && <span class="badge badge--example">{t.common.exampleBadge}</span>}
+      </div>
+      <h1>{d.title}</h1>
+      <p class="lead">{d.description}</p>
+      {period && (
+        <ul class="meta">
+          <li>{t.common.period}: <span class="ltr">{period}</span></li>
+        </ul>
+      )}
+      {
+        d.technologies.length > 0 && (
+          <ul class="tag-list" aria-label={t.common.technologies}>
+            {d.technologies.map((tech) => <li class="tag ltr">{tech}</li>)}
+          </ul>
+        )
+      }
+      {
+        (github || demo) && (
+          <div class="link-row">
+            {github && (
+              <a class="btn btn--secondary" href={github} target="_blank" rel="noopener noreferrer">
+                <Icon name="github" size={18} />{t.projects.repo}<span class="visually-hidden"> {t.a11y.newTab}</span>
+              </a>
+            )}
+            {demo && (
+              <a class="btn btn--primary" href={demo} target="_blank" rel="noopener noreferrer">
+                {t.common.liveDemo}<Icon name="external" size={16} /><span class="visually-hidden"> {t.a11y.newTab}</span>
+              </a>
+            )}
+          </div>
+        )
+      }
+    </header>
+
+    {
+      coverUrl && (
+        <div class="article-cover">
+          <img src={coverUrl} alt={d.coverAlt ?? ''} width="1200" height="675" decoding="async" fetchpriority="high" />
+        </div>
+      )
+    }
+
+    <div class="article-layout" data-article>
+      <div class="prose">
+        <Content />
+      </div>
+    </div>
+
+    {
+      relatedPostItems.length > 0 && (
+        <section class="section" aria-labelledby="rel-posts" style="border-block-start:0">
+          <h2 id="rel-posts" style="margin-block-end: var(--space-5)">{t.common.relatedArticles}</h2>
+          <div class="grid">{relatedPostItems.map((p) => <PostCard post={p} lang={lang} />)}</div>
+        </section>
+      )
+    }
+    {
+      relatedProjectItems.length > 0 && (
+        <section class="section" aria-labelledby="rel-projects" style="border-block-start:0">
+          <h2 id="rel-projects" style="margin-block-end: var(--space-5)">{t.common.relatedProjects}</h2>
+          <div class="grid">{relatedProjectItems.map((p) => <ProjectCard project={p} lang={lang} />)}</div>
+        </section>
+      )
+    }
+
+    <p style="padding-block: var(--space-6)">
+      <a class="text-link" href={localePath(lang, '/projects/')}>
+        <Icon name="arrow-back" size={18} class="icon-dir" />{t.common.backToProjects}
+      </a>
+    </p>
+  </div>
+</BaseLayout>

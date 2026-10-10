@@ -1,0 +1,145 @@
+---
+/**
+ * Progressive enhancements for long-form pages:
+ *  - copy buttons on code blocks
+ *  - reading progress bar (grows from the inline-start edge, so it works in RTL)
+ *  - current-section highlight in the table of contents
+ *  - "copy link" share button
+ * Everything is optional: content is fully readable without this script.
+ */
+import { useTranslations, type Lang } from '../i18n/ui';
+interface Props {
+  lang: Lang;
+  progress?: boolean;
+}
+const { lang, progress = false } = Astro.props;
+const t = useTranslations(lang);
+---
+
+{
+  progress && (
+    <div class="reading-progress" aria-hidden="true" data-reading-progress title={t.common.readingProgress}>
+      <span />
+    </div>
+  )
+}
+<div
+  hidden
+  data-enhance
+  data-copy={t.common.copyCode}
+  data-copied={t.common.codeCopied}
+  data-copy-label={t.common.copyCodeLabel}
+>
+</div>
+
+<script>
+  const cfg = document.querySelector<HTMLElement>('[data-enhance]');
+  const copyText = cfg?.dataset.copy ?? 'Copy';
+  const copiedText = cfg?.dataset.copied ?? 'Copied';
+  const copyLabel = cfg?.dataset.copyLabel ?? 'Copy code';
+
+  async function copy(text: string): Promise<boolean> {
+    try {
+      await navigator.clipboard.writeText(text);
+      return true;
+    } catch {
+      // Fallback for browsers/contexts without the async clipboard API
+      const ta = document.createElement('textarea');
+      ta.value = text;
+      ta.setAttribute('readonly', '');
+      ta.style.position = 'fixed';
+      ta.style.opacity = '0';
+      document.body.appendChild(ta);
+      ta.select();
+      let ok = false;
+      try {
+        ok = document.execCommand('copy');
+      } catch {
+        ok = false;
+      }
+      ta.remove();
+      return ok;
+    }
+  }
+
+  // ---- code copy buttons ----
+  document.querySelectorAll<HTMLPreElement>('.prose pre').forEach((pre) => {
+    const wrapper = document.createElement('div');
+    wrapper.className = 'code-block';
+    pre.parentNode?.insertBefore(wrapper, pre);
+    wrapper.appendChild(pre);
+
+    const btn = document.createElement('button');
+    btn.type = 'button';
+    btn.className = 'copy-code';
+    btn.textContent = copyText;
+    btn.setAttribute('aria-label', copyLabel);
+    let timer: number | undefined;
+    btn.addEventListener('click', async () => {
+      const ok = await copy(pre.innerText.replace(/\n$/, ''));
+      if (!ok) return;
+      btn.textContent = copiedText;
+      window.clearTimeout(timer);
+      timer = window.setTimeout(() => (btn.textContent = copyText), 1800);
+    });
+    wrapper.appendChild(btn);
+  });
+
+  // ---- copy page link ----
+  document.querySelectorAll<HTMLButtonElement>('[data-copy-link]').forEach((btn) => {
+    btn.addEventListener('click', async () => {
+      const url = btn.closest<HTMLElement>('[data-share-url]')?.dataset.shareUrl ?? window.location.href;
+      const ok = await copy(url);
+      const status = btn.closest('.share')?.querySelector<HTMLElement>('[data-copy-status]');
+      if (ok && status) {
+        status.textContent = btn.dataset.done ?? '';
+        window.setTimeout(() => (status.textContent = ''), 2000);
+      }
+    });
+  });
+
+  // ---- reading progress ----
+  const bar = document.querySelector<HTMLElement>('[data-reading-progress] span');
+  const article = document.querySelector<HTMLElement>('[data-article]');
+  if (bar && article) {
+    let ticking = false;
+    const update = () => {
+      const rect = article.getBoundingClientRect();
+      const total = rect.height - window.innerHeight * 0.5;
+      const done = Math.min(Math.max(-rect.top + window.innerHeight * 0.1, 0), Math.max(total, 1));
+      bar.style.inlineSize = `${Math.round((done / Math.max(total, 1)) * 100)}%`;
+      ticking = false;
+    };
+    window.addEventListener(
+      'scroll',
+      () => {
+        if (!ticking) {
+          ticking = true;
+          window.requestAnimationFrame(update);
+        }
+      },
+      { passive: true },
+    );
+    window.addEventListener('resize', update);
+    update();
+  }
+
+  // ---- table of contents: highlight current section ----
+  const tocLinks = [...document.querySelectorAll<HTMLAnchorElement>('[data-toc] a')];
+  if (tocLinks.length && 'IntersectionObserver' in window) {
+    const byId = new Map(tocLinks.map((a) => [decodeURIComponent(a.hash.slice(1)), a]));
+    const headings = [...byId.keys()].map((id) => document.getElementById(id)).filter((h): h is HTMLElement => !!h);
+    const observer = new IntersectionObserver(
+      (entries) => {
+        entries.forEach((entry) => {
+          if (entry.isIntersecting) {
+            tocLinks.forEach((a) => a.removeAttribute('aria-current'));
+            byId.get(entry.target.id)?.setAttribute('aria-current', 'true');
+          }
+        });
+      },
+      { rootMargin: '-80px 0px -70% 0px' },
+    );
+    headings.forEach((h) => observer.observe(h));
+  }
+</script>

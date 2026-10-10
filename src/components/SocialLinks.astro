@@ -1,0 +1,35 @@
+---
+import Icon from './Icon.astro';
+import { getSocialLinks } from '../utils/social';
+import { useTranslations, type Lang } from '../i18n/ui';
+interface Props {
+  lang: Lang;
+  /** Show the email address as text (contact page). */
+  showEmailText?: boolean;
+  only?: Array<'github' | 'linkedin' | 'instagram' | 'email'>;
+}
+const { lang, showEmailText = false, only } = Astro.props;
+const t = useTranslations(lang);
+const links = getSocialLinks().filter((l) => !only || only.includes(l.key));
+---
+
+{
+  links.length > 0 && (
+    <ul class="social-list" aria-label={t.a11y.social}>
+      {links.map((l) => (
+        <li>
+          <a
+            href={l.href}
+            {...(l.external ? { target: '_blank', rel: 'noopener noreferrer' } : {})}
+          >
+            <Icon name={l.icon} size={18} />
+            <span class={l.key === 'email' && showEmailText ? 'ltr' : undefined}>
+              {l.key === 'email' && showEmailText ? l.text : l.label}
+            </span>
+            {l.external && <span class="visually-hidden">{t.a11y.newTab}</span>}
+          </a>
+        </li>
+      ))}
+    </ul>
+  )
+}

@@ -1,0 +1,79 @@
+---
+import { render } from 'astro:content';
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import Breadcrumbs from '../../components/Breadcrumbs.astro';
+import ProfilePhoto from '../../components/ProfilePhoto.astro';
+import SocialLinks from '../../components/SocialLinks.astro';
+import { getAboutPage } from '../../utils/content';
+import { langStaticPaths } from '../../utils/routes';
+import { useTranslations, type Lang } from '../../i18n/ui';
+import { learningTopics } from '../../data/learning';
+
+export function getStaticPaths() {
+  return langStaticPaths();
+}
+const { lang } = Astro.props as { lang: Lang };
+const t = useTranslations(lang);
+
+const page = await getAboutPage(lang);
+const Content = page ? (await render(page)).Content : undefined;
+const exploring = learningTopics.filter((x) => x.group !== 'practicing');
+---
+
+<BaseLayout
+  lang={lang}
+  title={page?.data.title ?? t.about.title}
+  description={page?.data.description ?? t.about.description}
+  pageKey="about"
+  route="/about/"
+>
+  <section class="page-hero">
+    <div class="container page-hero__inner">
+      <Breadcrumbs lang={lang} items={[{ label: t.nav.about }]} />
+      <h1>{t.about.title}</h1>
+    </div>
+  </section>
+
+  <section class="section">
+    <div class="container split" style="--stack-gap: var(--space-6)">
+      <div class="stack" style="--stack-gap: var(--space-6)">
+        <ProfilePhoto lang={lang} small />
+        <div>
+          <h2 style="font-size: var(--text-lg); margin-block-end: var(--space-3)">{t.about.connect}</h2>
+          <SocialLinks lang={lang} />
+        </div>
+      </div>
+
+      <div class="stack" style="--stack-gap: var(--space-7)">
+        {Content && <div class="prose"><Content /></div>}
+
+        <div>
+          <h2 style="font-size: var(--text-xl); margin-block-end: var(--space-4)">{t.about.exploring}</h2>
+          <ul class="tag-list">
+            {exploring.map((topic) => <li class="tag">{topic.title[lang]}</li>)}
+          </ul>
+        </div>
+      </div>
+    </div>
+  </section>
+</BaseLayout>
+
+<style>
+  /* About layout: narrow photo column, wide text column */
+  .split {
+    gap: var(--space-6) var(--space-8);
+  }
+  @media (min-width: 52rem) {
+    .split {
+      grid-template-columns: minmax(0, 15rem) minmax(0, 1fr);
+    }
+  }
+  .split :global(.prose) {
+    font-size: var(--text-base);
+  }
+  /* The split helper styles paragraphs large; keep prose paragraphs normal */
+  .split :global(.prose p) {
+    font-size: inherit;
+    color: var(--text);
+  }
+</style>

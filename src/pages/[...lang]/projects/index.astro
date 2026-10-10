@@ -1,0 +1,52 @@
+---
+import BaseLayout from '../../../layouts/BaseLayout.astro';
+import Breadcrumbs from '../../../components/Breadcrumbs.astro';
+import FilterableList from '../../../components/FilterableList.astro';
+import ProjectCard from '../../../components/ProjectCard.astro';
+import { getProjects } from '../../../utils/content';
+import { langStaticPaths } from '../../../utils/routes';
+import { useTranslations, type Lang } from '../../../i18n/ui';
+import { categoryLabel, tagId } from '../../../data/taxonomy';
+
+export function getStaticPaths() {
+  return langStaticPaths();
+}
+const { lang } = Astro.props as { lang: Lang };
+const t = useTranslations(lang);
+
+const projects = await getProjects(lang);
+
+const categories = [...new Set(projects.map((p) => p.data.category))].map((id) => ({
+  id,
+  label: categoryLabel(lang, id),
+}));
+const techMap = new Map<string, string>();
+projects.forEach((p) => p.data.technologies.forEach((x) => techMap.set(tagId(x), x)));
+const technologies = [...techMap.entries()]
+  .map(([id, label]) => ({ id, label }))
+  .sort((a, b) => a.label.localeCompare(b.label));
+---
+
+<BaseLayout lang={lang} title={t.projects.title} description={t.projects.description} pageKey="projects" route="/projects/">
+  <section class="page-hero">
+    <div class="container page-hero__inner">
+      <Breadcrumbs lang={lang} items={[{ label: t.nav.projects }]} />
+      <h1>{t.projects.title}</h1>
+      <p>{t.projects.intro}</p>
+    </div>
+  </section>
+
+  <section class="section">
+    <div class="container">
+      {
+        projects.length > 0 ? (
+          <FilterableList lang={lang} categories={categories} tags={technologies} tagLegend={t.filters.technology}>
+            {projects.map((project) => <ProjectCard project={project} lang={lang} filterable />)}
+          </FilterableList>
+        ) : (
+          <p class="notice">{t.projects.none}</p>
+        )
+      }
+    </div>
+  </section>
+</BaseLayout>

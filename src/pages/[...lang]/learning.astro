@@ -1,0 +1,109 @@
+---
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import Breadcrumbs from '../../components/Breadcrumbs.astro';
+import SectionHeader from '../../components/SectionHeader.astro';
+import PostCard from '../../components/PostCard.astro';
+import ProjectCard from '../../components/ProjectCard.astro';
+import { getAllPosts, getAllProjects, pickByKeys } from '../../utils/content';
+import { langStaticPaths } from '../../utils/routes';
+import { useTranslations, type Lang } from '../../i18n/ui';
+import { learningTopics, learningGroups } from '../../data/learning';
+
+export function getStaticPaths() {
+  return langStaticPaths();
+}
+const { lang } = Astro.props as { lang: Lang };
+const t = useTranslations(lang);
+
+const allPosts = await getAllPosts();
+const allProjects = await getAllProjects();
+
+// Notes and projects referenced by topics (only those that exist in this language)
+const postKeys = [...new Set(learningTopics.flatMap((x) => x.relatedPosts ?? []))];
+const projectKeys = [...new Set(learningTopics.flatMap((x) => x.relatedProjects ?? []))];
+const notes = pickByKeys(allPosts, lang, postKeys).sort((a, b) => b.data.pubDate.valueOf() - a.data.pubDate.valueOf());
+const related = pickByKeys(allProjects, lang, projectKeys);
+
+const groups = learningGroups.map((g) => ({
+  id: g,
+  title: t.learning[g],
+  intro: t.learning[`${g}Intro` as 'currentlyIntro' | 'practicingIntro' | 'exploringIntro'],
+  topics: learningTopics.filter((x) => x.group === g),
+})).filter((g) => g.topics.length > 0);
+
+const titleOf = (kind: 'post' | 'project', key: string) => {
+  const list = kind === 'post' ? allPosts : allProjects;
+  const found = list.find((i) => i.lang === lang && i.key === key);
+  return found ? { title: found.data.title, href: found.path } : undefined;
+};
+---
+
+<BaseLayout lang={lang} title={t.learning.title} description={t.learning.description} pageKey="learning" route="/learning/">
+  <section class="page-hero">
+    <div class="container page-hero__inner">
+      <Breadcrumbs lang={lang} items={[{ label: t.nav.learning }]} />
+      <h1>{t.learning.title}</h1>
+      <p>{t.learning.intro}</p>
+    </div>
+  </section>
+
+  {
+    groups.map((g) => (
+      <section class="section" aria-labelledby={`g-${g.id}`}>
+        <div class="container">
+          <SectionHeader id={`g-${g.id}`} title={g.title} intro={g.intro} />
+          <div class="grid grid--tight">
+            {g.topics.map((topic) => {
+              const links = [
+                ...(topic.relatedPosts ?? []).map((k) => titleOf('post', k)),
+                ...(topic.relatedProjects ?? []).map((k) => titleOf('project', k)),
+              ].filter((x): x is { title: string; href: string } => Boolean(x));
+              return (
+                <article class="card card--topic">
+                  <div class="card__body">
+                    <span class="badge">{t.learningStatus[topic.status]}</span>
+                    <h3 class="card__title">{topic.title[lang]}</h3>
+                    <p class="card__desc">{topic.description[lang]}</p>
+                    {links.length > 0 && (
+                      <ul class="plain-list">
+                        {links.map((l) => (
+                          <li><a class="text-link" href={l.href}>{l.title}</a></li>
+                        ))}
+                      </ul>
+                    )}
+                  </div>
+                </article>
+              );
+            })}
+          </div>
+        </div>
+      </section>
+    ))
+  }
+
+  <section class="section" aria-labelledby="notes-title">
+    <div class="container">
+      <SectionHeader id="notes-title" title={t.learning.notes} intro={t.learning.notesIntro} />
+      {
+        notes.length > 0 ? (
+          <div class="grid">{notes.map((p) => <PostCard post={p} lang={lang} />)}</div>
+        ) : (
+          <p class="notice">{t.learning.noNotes}</p>
+        )
+      }
+    </div>
+  </section>
+
+  <section class="section" aria-labelledby="related-title">
+    <div class="container">
+      <SectionHeader id="related-title" title={t.learning.related} intro={t.learning.relatedIntro} />
+      {
+        related.length > 0 ? (
+          <div class="grid">{related.map((p) => <ProjectCard project={p} lang={lang} />)}</div>
+        ) : (
+          <p class="notice">{t.learning.noProjects}</p>
+        )
+      }
+    </div>
+  </section>
+</BaseLayout>

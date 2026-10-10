@@ -1,0 +1,130 @@
+/* ==========================================================
+   Design tokens — the only place colour values are defined.
+   Brand palette: #0B1120 navy, #06B6D4 cyan, #FFFFFF white,
+   #0F172A deep navy, #64748B slate, #E2E8F0 light gray,
+   #F8FAFC very light background.
+   ========================================================== */
+
+:root {
+  /* Brand palette (raw) */
+  --color-primary: #06b6d4;
+  --color-navy: #0b1120;
+  --color-navy-surface: #0f172a;
+  --color-white: #ffffff;
+  --color-slate: #64748b;
+  --color-gray: #e2e8f0;
+  --color-gray-light: #f8fafc;
+
+  /* Typography */
+  --font-sans: 'Inter Variable', system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+  /* IBM Plex Sans Arabic covers Arabic script only, so Latin text on Arabic pages falls through to Inter. */
+  --font-arabic: 'IBM Plex Sans Arabic', 'Inter Variable', 'Noto Sans Arabic', 'Segoe UI', Tahoma, system-ui, sans-serif;
+  --font-mono: ui-monospace, 'SFMono-Regular', 'Cascadia Code', Menlo, Consolas, 'Liberation Mono', monospace;
+
+  --text-xs: 0.8125rem;
+  --text-sm: 0.9375rem;
+  --text-base: 1.0625rem;
+  --text-lg: 1.1875rem;
+  --text-xl: 1.4375rem;
+  --text-2xl: clamp(1.625rem, 1.2rem + 1.6vw, 2.125rem);
+  --text-3xl: clamp(2rem, 1.3rem + 2.8vw, 3rem);
+  --text-hero: clamp(2.375rem, 1.3rem + 4.6vw, 4.25rem);
+
+  /* Spacing (4px base) */
+  --space-1: 0.25rem;
+  --space-2: 0.5rem;
+  --space-3: 0.75rem;
+  --space-4: 1rem;
+  --space-5: 1.5rem;
+  --space-6: 2rem;
+  --space-7: 3rem;
+  --space-8: 4.5rem;
+  --space-9: 6.5rem;
+
+  /* Shape */
+  --radius-sm: 4px;
+  --radius: 6px;
+  --radius-lg: 10px;
+
+  /* Layout */
+  --container: 72rem;
+  --container-narrow: 46rem;
+  --measure: 44rem;
+  --header-h: 3.75rem;
+  --gutter: clamp(1rem, 4vw, 2rem);
+
+  --ease: cubic-bezier(0.2, 0.7, 0.2, 1);
+  --dur: 160ms;
+}
+
+/* ---------- LIGHT (default) ---------- */
+:root,
+:root[data-theme='light'] {
+  color-scheme: light;
+  --bg: var(--color-gray-light);
+  --surface: var(--color-white);
+  --surface-muted: #f1f5f9;
+  --text: var(--color-navy);
+  --text-muted: #475569;
+  --border: var(--color-gray);
+  --border-strong: #cbd5e1;
+  --accent: var(--color-primary);
+  /* Cyan darkened for TEXT on light backgrounds (AA contrast). */
+  --accent-text: #0e7490;
+  --on-accent: var(--color-navy);
+  --focus: #0e7490;
+  --shadow: 0 1px 2px rgb(15 23 42 / 0.06), 0 1px 1px rgb(15 23 42 / 0.04);
+  --shadow-hover: 0 4px 14px rgb(15 23 42 / 0.08);
+  --code-bg: #f1f5f9;
+  --code-border: var(--color-gray);
+  --inline-code-bg: #e8eef5;
+  --shiki-mode: var(--shiki-light);
+}
+
+/* ---------- DARK ---------- */
+:root[data-theme='dark'] {
+  color-scheme: dark;
+  --bg: var(--color-navy);
+  --surface: var(--color-navy-surface);
+  --surface-muted: #131d33;
+  --text: #f8fafc;
+  --text-muted: #94a3b8;
+  --border: #1e293b;
+  --border-strong: #334155;
+  --accent: var(--color-primary);
+  --accent-text: var(--color-primary);
+  --on-accent: var(--color-navy);
+  --focus: var(--color-primary);
+  --shadow: 0 1px 2px rgb(0 0 0 / 0.35);
+  --shadow-hover: 0 4px 16px rgb(0 0 0 / 0.4);
+  --code-bg: #0a0f1d;
+  --code-border: #1e293b;
+  --inline-code-bg: #172036;
+  --shiki-mode: var(--shiki-dark);
+}
+
+/* No-JS fallback: follow the operating system preference. */
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme]) {
+    color-scheme: dark;
+    --bg: var(--color-navy);
+    --surface: var(--color-navy-surface);
+    --surface-muted: #131d33;
+    --text: #f8fafc;
+    --text-muted: #94a3b8;
+    --border: #1e293b;
+    --border-strong: #334155;
+    --accent-text: var(--color-primary);
+    --focus: var(--color-primary);
+    --shadow: 0 1px 2px rgb(0 0 0 / 0.35);
+    --shadow-hover: 0 4px 16px rgb(0 0 0 / 0.4);
+    --code-bg: #0a0f1d;
+    --code-border: #1e293b;
+    --inline-code-bg: #172036;
+    --shiki-mode: var(--shiki-dark);
+  }
+}
+
+html[lang='ar'] {
+  --text-base: 1.125rem;
+}

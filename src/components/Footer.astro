@@ -1,0 +1,77 @@
+---
+import Logo from './Logo.astro';
+import Icon from './Icon.astro';
+import LangSwitcher from './LangSwitcher.astro';
+import { getSocialLinks } from '../utils/social';
+import { site } from '../data/site';
+import { useTranslations, type Lang } from '../i18n/ui';
+import { localePath } from '../utils/url';
+
+interface Props {
+  lang: Lang;
+  targets: Record<Lang, { href: string; exact: boolean }>;
+}
+const { lang, targets } = Astro.props;
+const t = useTranslations(lang);
+const year = new Date().getFullYear();
+const social = getSocialLinks();
+
+const nav = [
+  { label: t.nav.about, href: localePath(lang, '/about/') },
+  { label: t.nav.projects, href: localePath(lang, '/projects/') },
+  { label: t.nav.blog, href: localePath(lang, '/blog/') },
+  { label: t.nav.learning, href: localePath(lang, '/learning/') },
+  { label: t.nav.resume, href: localePath(lang, '/resume/') },
+  { label: t.nav.contact, href: localePath(lang, '/contact/') },
+];
+const rssHref = localePath(lang, '/rss.xml');
+---
+
+<footer class="site-footer">
+  <div class="container">
+    <div class="site-footer__grid">
+      <div>
+        <a class="brand" href={localePath(lang, '/')} aria-label={t.a11y.logoHome}>
+          <Logo />
+        </a>
+        <p>{t.footer.blurb}</p>
+        <p><em>{site.tagline[lang]}</em></p>
+      </div>
+
+      <nav aria-label={t.a11y.footerNav}>
+        <h2>{t.footer.explore}</h2>
+        <ul>
+          {nav.map((n) => <li><a href={n.href}>{n.label}</a></li>)}
+        </ul>
+      </nav>
+
+      <div>
+        <h2>{t.footer.connect}</h2>
+        <ul>
+          {
+            social.map((l) => (
+              <li>
+                <a href={l.href} {...(l.external ? { target: '_blank', rel: 'noopener noreferrer' } : {})}>
+                  {l.label}
+                  {l.external && <span class="visually-hidden"> {t.a11y.newTab}</span>}
+                </a>
+              </li>
+            ))
+          }
+          <li>
+            <a href={rssHref}>
+              <Icon name="rss" size={16} />&nbsp;{t.common.rss}
+            </a>
+          </li>
+        </ul>
+      </div>
+    </div>
+
+    <div class="site-footer__bottom">
+      <small>
+        © {year} <span class="ltr" translate="no">MEZO TECH</span>. {t.footer.rights}
+      </small>
+      <LangSwitcher lang={lang} targets={targets} />
+    </div>
+  </div>
+</footer>

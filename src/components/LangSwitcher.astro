@@ -1,0 +1,50 @@
+---
+/**
+ * EN / AR switcher. Each link points at the equivalent page in the other
+ * language when it exists, otherwise at a sensible fallback (the section's
+ * listing page). It never points at a route that does not exist.
+ */
+import { langs, languages, useTranslations, type Lang } from '../i18n/ui';
+interface Props {
+  lang: Lang;
+  /** href per language (already includes base path). */
+  targets: Record<Lang, { href: string; exact: boolean }>;
+}
+const { lang, targets } = Astro.props;
+const t = useTranslations(lang);
+---
+
+<nav class="lang-switch" aria-label={t.a11y.language}>
+  {
+    langs.map((l) => {
+      const target = targets[l];
+      const current = l === lang;
+      return (
+        <a
+          href={target.href}
+          lang={l}
+          hreflang={l}
+          data-set-lang={l}
+          aria-current={current ? 'true' : undefined}
+          title={!current && !target.exact ? t.a11y.translationUnavailable : languages[l].name}
+          aria-label={languages[l].name}
+        >
+          {languages[l].label}
+        </a>
+      );
+    })
+  }
+</nav>
+
+<script>
+  // Remember an explicit language choice. This never redirects anyone automatically.
+  document.querySelectorAll<HTMLAnchorElement>('[data-set-lang]').forEach((a) => {
+    a.addEventListener('click', () => {
+      try {
+        localStorage.setItem('lang', a.dataset.setLang ?? 'en');
+      } catch {
+        /* ignore */
+      }
+    });
+  });
+</script>
