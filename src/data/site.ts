@@ -63,10 +63,10 @@ export const site = {
 
   /** Social profiles and contact. Replace the placeholders; unconfigured entries are hidden. */
   social: {
-    github: '[PLACEHOLDER_GITHUB_URL]',
-    linkedin: '[PLACEHOLDER_LINKEDIN_URL]',
-    instagram: '[PLACEHOLDER_INSTAGRAM_URL]',
-    email: '[PLACEHOLDER_EMAIL]',
+    github: 'https://github.com/mazeneladham',
+    linkedin: 'https://www.linkedin.com/in/mazen-aladeham/',
+    instagram: 'https://www.instagram.com/mezo_tech55/',
+    email: 'mezo.tech.io@gmail.com',
   },
 } as const;
 
